@@ -1,0 +1,97 @@
+// 의료 검사실 항균제 감수성 검사 데이터베이스 (더 정규화된 버전)
+// DBML 형식 ERD
+
+Table patients {
+  PATIENT_NO varchar [primary key]
+  GENDER varchar
+  BIRTH_DATE date
+  created_at timestamp [default: `now()`]
+}
+
+Table VISITS {
+  VISIT_NO varchar [primary key]
+  PATIENT_NO varchar [not null]
+  ADMISSION_DATE date
+  created_at timestamp [default: `now()`]
+}
+
+Table SAMPLES {
+  TEST_ID integer [primary key]
+  VISIT_NO varchar [not null]
+  SPECIMEN_NO varchar [note: 'Whole Blood, ...']
+  TEST_NAME varchar
+  TEST_DATE date 
+  TEST_DATETIME date
+  created_at timestamp [default: `now()`]
+}
+
+Table BACTERIAL_INFO {
+  균코드 varchar [primary key, note: '균 분류 코드']
+  균명 varchar [note: '분리된 균의 이름']
+  created_at timestamp [default: `now()`]
+}
+
+Table bacterial_tests {
+  TEST_ID integer [primary key, increment]
+  균코드 varchar [not null]
+  RESULT varchar [note: '전체적인 검사 결과']
+  created_at timestamp [default: `now()`]
+}
+
+Table ANTIBIOTICS {
+  항생제코드 varchar [primary key]
+  항생제명 varchar [not null]
+  항생제분류 varchar [note: '항균제 계열 (베타락탐, 퀴놀론 등)']
+  created_at timestamp [default: `now()`]
+}
+
+Table antibiotic_susceptibility_results {
+  TEST_ID integer [not null, ref: > SAMPLES.TEST_ID]
+  균코드 varchar [not null, ref: > BACTERIAL_INFO.균코드]
+  균농도 varchar [note: '균 농도 정보: Moderate']
+  항생제코드 varchar [not null, ref: > ANTIBIOTICS.항생제코드]
+  항생제명 varchar 
+  MIC결과 decimal [note: 'Minimum Inhibitory Concentration']
+  감수성결과 varchar [note: 'S(Sensitive), I(Intermediate), R(Resistant)']
+  created_at timestamp [default: `now()`]
+}
+
+
+Table SPECIMEN {
+  SPECIMEN_NO integer [primary key]
+  SPECIMEN_NAME varchar
+  created_at timestamp [default: `now()`]
+}
+
+// 초기 데이터 삽입 SQL
+/*
+INSERT INTO antibiotics (항균제코드, 항균제명, 항균제분류) VALUES
+('AMK', 'Amikacin', 'Aminoglycoside'),
+('SAM', 'Ampicillin/Sulbactam', 'Beta-lactam'),
+('ATM', 'Aztreonam', 'Monobactam'),
+('FEP', 'Cefepime', 'Cephalosporin'),
+('CTX', 'Cefotaxime', 'Cephalosporin'),
+('CAZ', 'Ceftazidime', 'Cephalosporin'),
+('CIP', 'Ciprofloxacin', 'Fluoroquinolone'),
+('CST', 'Colistin', 'Polymyxin'),
+('GEN', 'Gentamicin', 'Aminoglycoside'),
+('IPM', 'Imipenem', 'Carbapenem'),
+('MEM', 'Meropenem', 'Carbapenem'),
+('MIN', 'Minocycline', 'Tetracycline'),
+('PIP', 'Piperacillin', 'Beta-lactam'),
+('TZP', 'Piperacillin/Tazobactam', 'Beta-lactam'),
+('TCC', 'Ticarcillin/Clavulanate', 'Beta-lactam'),
+('TGC', 'Tigecycline', 'Glycylcycline'),
+('SXT', 'Trimethoprim/Sulfamethoxazole', 'Folate antagonist');
+*/
+
+// 관계 정의
+Ref: VISITS.PATIENT_NO > patients.PATIENT_NO // many-to-one
+
+Ref: SAMPLES.VISIT_NO > VISITS.VISIT_NO // many-to-one
+
+Ref: SAMPLES.SPECIMEN_NO > SPECIMEN.SPECIMEN_NO // many-to-one
+
+Ref: bacterial_tests.균코드 > BACTERIAL_INFO.균코드 // many-to-one
+
+Ref: bacterial_tests.TEST_ID > SAMPLES.TEST_ID // many-to-one
